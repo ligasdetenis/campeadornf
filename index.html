@@ -1,678 +1,313 @@
-<!doctype html>
-<html lang="es">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>I Liga no federada Club de Tenis Campeador</title>
-  <style>
-    :root{
-      --bg:#070A13; --card:#121C3A; --line:rgba(255,255,255,.10);
-      --muted:#9bb0da; --text:#eef2ff; --accent:#7c5cff;
-      --ok:#35d07f; --warn:#ffcc66; --danger:#ff6b6b;
-      --shadow:0 12px 30px rgba(0,0,0,.35); --r:16px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(124,92,255,.25), transparent 60%),
-        radial-gradient(1000px 500px at 95% 0%, rgba(53,208,127,.18), transparent 55%),
-        linear-gradient(180deg,#070A13,#050711);
-    }
-    header{position:sticky;top:0;z-index:10;background:rgba(7,10,19,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-    .wrap{max-width:1200px;margin:0 auto;padding:14px}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    h1{margin:0;font-size:18px}
-    .sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.35}
-    .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted);font-weight:900;font-size:12px}
-    main{max-width:1200px;margin:0 auto;padding:14px;display:grid;gap:14px}
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-    @media (max-width:980px){.grid,.grid2,.grid3{grid-template-columns:1fr}}
-    .card{background:rgba(18,28,58,.86);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
-    .card h2{margin:0;padding:12px 14px;font-size:13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .pad{padding:14px}
-    label{display:block;font-size:12px;color:var(--muted);margin:6px 0}
-    select,input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:var(--text);outline:none}
-    .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    @media (max-width:700px){.controls{grid-template-columns:1fr}}
-    .status{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.14);color:var(--muted)}
-    .pending{color:#c9d1e6}
-    .programado{color:#8fd3ff;border-color:rgba(143,211,255,.35);background:rgba(143,211,255,.08)}
-    .jugado{color:var(--ok);border-color:rgba(53,208,127,.35);background:rgba(53,208,127,.08)}
-    .aplazado{color:var(--warn);border-color:rgba(255,204,102,.35);background:rgba(255,204,102,.08)}
-    .no_jugado{color:var(--danger);border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
-    .matchList{display:grid;gap:10px}
-    .match{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,.04)}
-    .matchTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
-    .matchTitle{font-weight:1000}
-    .muted{color:var(--muted)}
-    .small{font-size:12px}
-    .score{font-weight:1000;font-size:14px;margin-top:8px}
-    .hint{font-size:12px;color:var(--muted);line-height:1.4;margin-top:10px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px;text-align:left;vertical-align:top}
-    th{color:var(--muted);font-weight:950}
-    .kpis{display:flex;gap:10px;flex-wrap:wrap}
-    .kpi{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);min-width:150px}
-    .kpi .k{color:var(--muted);font-size:11px;font-weight:950}
-    .kpi .v{font-size:18px;font-weight:1000;margin-top:6px}
-    .kpi .s{color:var(--muted);font-size:12px;margin-top:4px}
-    .empty{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
-    tr.promote td{background:rgba(53,208,127,.12)}
-    tr.promote td:first-child{border-left:3px solid rgba(53,208,127,.8)}
-    tr.relegate td{background:rgba(255,107,107,.12)}
-    tr.relegate td:first-child{border-left:3px solid rgba(255,107,107,.8)}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    button{cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(124,92,255,.22);color:var(--text);font-weight:900}
-    button.secondary{background:transparent}
-    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .saveStatus{margin-top:10px}
-  </style>
+<meta charset="UTF-8">
+<title>Liga Tenis</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 10px;
+  background: #f5f5f5;
+}
+
+h1 { text-align: center }
+
+.section {
+  margin: 20px 0;
+}
+
+.card {
+  background: white;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.availability {
+  background: #e8f4ff;
+}
+
+.match {
+  border-left: 5px solid #ccc;
+}
+
+.played { border-color: #4caf50 }
+.pending { border-color: orange }
+.postponed { border-color: red }
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  padding: 6px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+select, button {
+  padding: 6px;
+  margin: 5px 0;
+}
+
+.small {
+  font-size: 12px;
+  color: gray;
+}
+</style>
+
 </head>
+
 <body>
-<header>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1>🎾 I Liga no federada Club de Tenis Campeador</h1>
-        <div class="sub">
-          Liga por categorías · victoria = <b>3 puntos</b> · derrota = <b>0</b> · no jugado = <b>0</b>.<br>
-          Desempates: enfrentamiento directo, diferencia de sets, diferencia de juegos y juegos a favor.
-        </div>
-      </div>
-      <div class="badge" id="syncBadge">Conectando…</div>
-    </div>
-  </div>
-</header>
 
-<main>
-  <section class="card">
-    <h2><span>⚙️ Filtros</span><small id="meta"></small></h2>
-    <div class="pad controls">
-      <div>
-        <label>Categoría</label>
-        <select id="categoryPick"></select>
-      </div>
-      <div>
-        <label>Jornada</label>
-        <select id="roundPick"></select>
-      </div>
-      <div>
-        <label>Jugador</label>
-        <select id="playerPick"></select>
-      </div>
-    </div>
-  </section>
+<h1>🏆 Liga de Tenis</h1>
 
-  <section class="grid">
-    <section class="card">
-      <h2><span>📋 Partidos</span><small id="matchMeta"></small></h2>
-      <div class="pad">
-        <div id="matchList" class="matchList"></div>
-      </div>
-    </section>
+<button onclick="load()">🔄 Actualizar</button>
 
-    <section class="card">
-      <h2><span>📊 Estadísticas del jugador</span><small id="playerStatsTitle">Selecciona un jugador</small></h2>
-      <div class="pad">
-        <div id="kpis" class="kpis"></div>
-        <div id="nextMatches" class="hint"></div>
-      </div>
-    </section>
-  </section>
+<br>
 
-  <section class="grid2">
-    <section class="card">
-      <h2><span>🗓️ Comunicar programación</span><small>Autogestión del partido</small></h2>
-      <div class="pad">
-        <label>Partido</label>
-        <select id="scheduleMatchPick"></select>
-        <div class="split">
-          <div>
-            <label>Fecha</label>
-            <input id="schedDate" type="date">
-          </div>
-          <div>
-            <label>Hora</label>
-            <input id="schedTime" type="time">
-          </div>
-        </div>
-        <div class="split">
-          <div>
-            <label>Lugar</label>
-            <input id="schedVenue" placeholder="Club Campeador">
-          </div>
-          <div>
-            <label>Pista</label>
-            <input id="schedCourt" placeholder="Pista 2">
-          </div>
-        </div>
-        <label>Observaciones</label>
-        <input id="schedNotes" placeholder="Notas opcionales">
-        <label>Comunicado por</label>
-        <input id="schedBy" placeholder="Tu nombre">
-        <div class="btns">
-          <button id="saveScheduleBtn">Guardar programación</button>
-          <button class="secondary" id="reloadBtn">Recargar datos</button>
-        </div>
-        <div id="scheduleStatus" class="saveStatus"></div>
-      </div>
-    </section>
+<select id="categoryFilter" onchange="renderAll()"></select>
 
-    <section class="card">
-      <h2><span>🧾 Subir resultado</span><small>Los jugadores pueden comunicarlo</small></h2>
-      <div class="pad">
-        <label>Partido</label>
-        <select id="resultMatchPick"></select>
-        <div class="split">
-          <div>
-            <label>Set 1 A</label>
-            <input id="s1a" type="number" min="0" max="7">
-          </div>
-          <div>
-            <label>Set 1 B</label>
-            <input id="s1b" type="number" min="0" max="7">
-          </div>
-        </div>
-        <div class="split">
-          <div>
-            <label>Set 2 A</label>
-            <input id="s2a" type="number" min="0" max="7">
-          </div>
-          <div>
-            <label>Set 2 B</label>
-            <input id="s2b" type="number" min="0" max="7">
-          </div>
-        </div>
-        <div class="split">
-          <div>
-            <label>Super TB A</label>
-            <input id="tbA" type="number" min="0" max="99">
-          </div>
-          <div>
-            <label>Super TB B</label>
-            <input id="tbB" type="number" min="0" max="99">
-          </div>
-        </div>
-        <label>Subido por</label>
-        <input id="resultBy" placeholder="Tu nombre">
-        <div class="btns">
-          <button id="saveResultBtn">Guardar resultado</button>
-        </div>
-        <div id="resultStatus" class="saveStatus"></div>
-      </div>
-    </section>
-  </section>
+<!-- DISPONIBILIDAD -->
+<div class="section">
+<h2>📅 Disponibilidad de pistas</h2>
+<div id="availability"></div>
+</div>
 
-  <section class="grid2">
-    <section class="card">
-      <h2><span>🏆 Clasificación</span><small id="standMeta"></small></h2>
-      <div class="pad">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Jugador</th>
-              <th>PTS</th>
-              <th>PJ</th>
-              <th>PG</th>
-              <th>PP</th>
-              <th>PNJ</th>
-              <th>Sets</th>
-              <th>Juegos</th>
-              <th>Dif</th>
-            </tr>
-          </thead>
-          <tbody id="standingsBody"></tbody>
-        </table>
-      </div>
-    </section>
+<!-- PARTIDOS -->
+<div class="section">
+<h2>🎾 Partidos</h2>
+<div id="matches"></div>
+</div>
 
-    <section class="card">
-      <h2><span>ℹ️ Estado de partidos</span><small>Lectura rápida</small></h2>
-      <div class="pad">
-        <div class="hint">
-          <span class="status pending">pendiente</span> partido creado sin fecha/lugar.<br><br>
-          <span class="status programado">programado</span> con fecha, hora y lugar cargados.<br><br>
-          <span class="status aplazado">aplazado</span> se jugará más adelante.<br><br>
-          <span class="status jugado">jugado</span> con resultado subido.<br><br>
-          <span class="status no_jugado">no jugado</span> cerrado sin disputarse.
-        </div>
-      </div>
-    </section>
-  </section>
-</main>
+<!-- CLASIFICACIÓN -->
+<div class="section">
+<h2>📊 Clasificación</h2>
+<div class="table-container">
+<table id="table"></table>
+</div>
+</div>
 
 <script>
-const WORKER_URL = "https://liga-campeador-api.ligasdetenis.workers.dev";
-const TOURNAMENT_ID = "liga-no-federada-campeador";
 
-const state = {
-  tournament: null,
-  categoryId: "",
-  roundId: "__ALL__",
-  playerId: "__ALL__"
-};
+const API = "https://liga-campeador-api.ligasdetenis.workers.dev";
+const ID = "liga1";
 
-function $(id){ return document.getElementById(id); }
+let DATA = null;
 
-async function loadTournament(){
-  const url = WORKER_URL + "/get?id=" + encodeURIComponent(TOURNAMENT_ID);
-  const res = await fetch(url);
-  const data = await res.json();
-  if(!data.success || !data.data) throw new Error(data.error || "No se pudo cargar el torneo");
-  state.tournament = data.data;
-}
+// ================= LOAD =================
+async function load() {
+  const res = await fetch(API + "/get?id=" + ID);
+  const json = await res.json();
+  DATA = json.data;
 
-async function postApi(path, body){
-  const res = await fetch(WORKER_URL + path, {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
-  if(!data.success) throw new Error(data.error || "Error");
-  return data;
-}
-
-function getCategories(){ return Object.values(state.tournament?.categories || {}); }
-function getCurrentCategory(){ return state.tournament?.categories?.[state.categoryId] || null; }
-function playerName(playerId){ const cat = getCurrentCategory(); return cat?.players?.[playerId]?.name || playerId || ""; }
-
-function getMatchStatus(match){
-  if(match?.result) return "jugado";
-  if(match?.noPlayed) return "no_jugado";
-  if(match?.postponed) return "aplazado";
-  const s = match?.schedule || {};
-  if(s.date && s.time && (s.venue || s.venueId || s.venueText)) return "programado";
-  return "pendiente";
-}
-
-function formatScore(result){
-  if(!result) return "—";
-  let parts = [];
-  if(result.s1a != null && result.s1b != null) parts.push(result.s1a + "-" + result.s1b);
-  if(result.s2a != null && result.s2b != null) parts.push(result.s2a + "-" + result.s2b);
-  if(result.tbA != null && result.tbB != null) parts.push("STB " + result.tbA + "-" + result.tbB);
-  return parts.join(" · ");
-}
-
-function fillCategorySelect(){
-  const sel = $("categoryPick");
-  const cats = getCategories();
-  sel.innerHTML = cats.map(c => '<option value="'+c.id+'">'+c.name+'</option>').join("");
-  if(!state.categoryId && cats.length) state.categoryId = cats[0].id;
-  sel.value = state.categoryId;
-}
-function fillRoundSelect(){
-  const sel = $("roundPick");
-  const cat = getCurrentCategory();
-  const rounds = Object.values(cat?.rounds || {});
-  let html = '<option value="__ALL__">Todas las jornadas</option>';
-  html += rounds.map(r => '<option value="'+r.id+'">'+r.name+'</option>').join("");
-  sel.innerHTML = html;
-  if(!rounds.some(r => r.id === state.roundId)) state.roundId = "__ALL__";
-  sel.value = state.roundId;
-}
-function fillPlayerSelect(){
-  const sel = $("playerPick");
-  const cat = getCurrentCategory();
-  const players = Object.values(cat?.players || {});
-  let html = '<option value="__ALL__">(Todos)</option>';
-  html += players.map(p => '<option value="'+p.id+'">'+p.name+'</option>').join("");
-  sel.innerHTML = html;
-  if(!players.some(p => p.id === state.playerId)) state.playerId = "__ALL__";
-  sel.value = state.playerId;
-}
-
-function getFilteredMatches(){
-  const cat = getCurrentCategory();
-  let matches = Object.values(cat?.matches || {});
-  if(state.roundId !== "__ALL__") matches = matches.filter(m => m.roundId === state.roundId);
-  if(state.playerId !== "__ALL__") matches = matches.filter(m => m.playerAId === state.playerId || m.playerBId === state.playerId);
-  return matches.sort((a,b) => {
-    const ad = (a.schedule?.date || "9999-12-31") + " " + (a.schedule?.time || "23:59");
-    const bd = (b.schedule?.date || "9999-12-31") + " " + (b.schedule?.time || "23:59");
-    return ad.localeCompare(bd);
-  });
-}
-
-function getSchedulableMatches(){
-  const cat = getCurrentCategory();
-  const matches = Object.values(cat?.matches || {});
-  return matches.filter(m => !m.noPlayed).sort((a,b) => (playerName(a.playerAId)+playerName(a.playerBId)).localeCompare(playerName(b.playerAId)+playerName(b.playerBId)));
-}
-
-function renderMeta(){
-  const cat = getCurrentCategory();
-  const rounds = Object.keys(cat?.rounds || {}).length;
-  const players = Object.keys(cat?.players || {}).length;
-  $("meta").textContent = players + " jugadores · " + rounds + " jornadas";
-}
-
-function renderMatches(){
-  const cat = getCurrentCategory();
-  const matches = getFilteredMatches();
-  $("matchMeta").textContent = matches.length + " visibles";
-  if(!matches.length){
-    $("matchList").innerHTML = '<div class="empty">No hay partidos para ese filtro.</div>';
-    return;
-  }
-  $("matchList").innerHTML = matches.map(m => {
-    const st = getMatchStatus(m);
-    const roundName = cat?.rounds?.[m.roundId]?.name || m.roundId;
-    const sched = m.schedule || {};
-    const when = sched.date ? (sched.date + (sched.time ? " · " + sched.time : "")) : "Sin fecha";
-    const where = sched.venue ? sched.venue + (sched.court ? " · " + sched.court : "") : "Sin lugar";
-    return `
-      <div class="match">
-        <div class="matchTop">
-          <div>
-            <div class="matchTitle">${playerName(m.playerAId)} vs ${playerName(m.playerBId)}</div>
-            <div class="muted small">${roundName}</div>
-          </div>
-          <span class="status ${st}">${st.replace("_"," ")}</span>
-        </div>
-        <div class="hint">
-          <b>Cuándo:</b> ${when}<br>
-          <b>Dónde:</b> ${where}
-          ${sched.notes ? "<br><b>Nota:</b> " + sched.notes : ""}
-        </div>
-        <div class="score">${formatScore(m.result)}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-function computeMatchOutcomeForPlayer(match, playerId){
-  if(match.noPlayed) return { counted:true, win:false, loss:false, noPlayed:true, setsFor:0, setsAgainst:0, gamesFor:0, gamesAgainst:0 };
-  if(!match.result) return null;
-  const isA = match.playerAId === playerId;
-  const r = match.result;
-  const s1p = isA ? r.s1a : r.s1b, s1o = isA ? r.s1b : r.s1a;
-  const s2p = isA ? r.s2a : r.s2b, s2o = isA ? r.s2b : r.s2a;
-  const tbp = isA ? r.tbA : r.tbB, tbo = isA ? r.tbB : r.tbA;
-  let setsFor = 0, setsAgainst = 0;
-  if(s1p != null && s1o != null){ if(s1p > s1o) setsFor++; else setsAgainst++; }
-  if(s2p != null && s2o != null){ if(s2p > s2o) setsFor++; else setsAgainst++; }
-  if(tbp != null && tbo != null){ if(tbp > tbo) setsFor++; else setsAgainst++; }
-  return {
-    counted:true,
-    win: setsFor > setsAgainst,
-    loss: setsAgainst > setsFor,
-    noPlayed:false,
-    setsFor, setsAgainst,
-    gamesFor:(s1p||0)+(s2p||0),
-    gamesAgainst:(s1o||0)+(s2o||0)
-  };
-}
-
-function computeHeadToHead(aId, bId){
-  const cat = getCurrentCategory();
-  const matches = Object.values(cat?.matches || {});
-  const duel = matches.find(m =>
-    ((m.playerAId === aId && m.playerBId === bId) || (m.playerAId === bId && m.playerBId === aId)) &&
-    m.result
-  );
-  if(!duel) return 0;
-  const outA = computeMatchOutcomeForPlayer(duel, aId);
-  if(!outA) return 0;
-  return outA.win ? -1 : 1;
-}
-
-function computeStandings(){
-  const cat = getCurrentCategory();
-  const players = Object.values(cat?.players || {});
-  const matches = Object.values(cat?.matches || {});
-  const map = {};
-  players.forEach(p => map[p.id] = { playerId:p.id, name:p.name, points:0, played:0, wins:0, losses:0, noPlayed:0, setsFor:0, setsAgainst:0, gamesFor:0, gamesAgainst:0 });
-  matches.forEach(m => {
-    [m.playerAId, m.playerBId].forEach(pid => {
-      if(!map[pid]) return;
-      const out = computeMatchOutcomeForPlayer(m, pid);
-      if(!out || !out.counted) return;
-      map[pid].played += 1;
-      map[pid].setsFor += out.setsFor;
-      map[pid].setsAgainst += out.setsAgainst;
-      map[pid].gamesFor += out.gamesFor;
-      map[pid].gamesAgainst += out.gamesAgainst;
-      if(out.win){ map[pid].wins += 1; map[pid].points += 3; }
-      else if(out.loss){ map[pid].losses += 1; }
-      else if(out.noPlayed){ map[pid].noPlayed += 1; }
-    });
-  });
-  const arr = Object.values(map).map(x => ({ ...x, setDifference:x.setsFor-x.setsAgainst, gameDifference:x.gamesFor-x.gamesAgainst }));
-  arr.sort((a,b) => {
-    if(b.points !== a.points) return b.points - a.points;
-    const hh = computeHeadToHead(a.playerId, b.playerId);
-    if(hh !== 0) return hh;
-    if(b.setDifference !== a.setDifference) return b.setDifference - a.setDifference;
-    if(b.gameDifference !== a.gameDifference) return b.gameDifference - a.gameDifference;
-    if(b.gamesFor !== a.gamesFor) return b.gamesFor - a.gamesFor;
-    return a.name.localeCompare(b.name, "es");
-  });
-  return arr;
-}
-
-function renderStandings(){
-  const rows = computeStandings();
-  $("standMeta").textContent = rows.length + " jugadores";
-  if(!rows.length){
-    $("standingsBody").innerHTML = '<tr><td colspan="10" class="muted">Sin jugadores.</td></tr>';
-    return;
-  }
-  $("standingsBody").innerHTML = rows.map((r,i) => `
-    <tr class="${i < 2 ? 'promote' : (i >= rows.length - 2 && rows.length > 3 ? 'relegate' : '')}">
-      <td>${i+1}</td>
-      <td><b>${r.name}</b></td>
-      <td><b>${r.points}</b></td>
-      <td>${r.played}</td>
-      <td>${r.wins}</td>
-      <td>${r.losses}</td>
-      <td>${r.noPlayed}</td>
-      <td>${r.setsFor}-${r.setsAgainst}</td>
-      <td>${r.gamesFor}-${r.gamesAgainst}</td>
-      <td>${r.gameDifference > 0 ? "+" : ""}${r.gameDifference}</td>
-    </tr>
-  `).join("");
-}
-
-function computePlayerStats(playerId){
-  if(!playerId || playerId === "__ALL__") return null;
-  const cat = getCurrentCategory();
-  const matches = Object.values(cat?.matches || {});
-  const upcoming = [];
-  let played=0,wins=0,losses=0,noPlayed=0,setsFor=0,setsAgainst=0,gamesFor=0,gamesAgainst=0;
-  matches.forEach(m => {
-    if(m.playerAId !== playerId && m.playerBId !== playerId) return;
-    const out = computeMatchOutcomeForPlayer(m, playerId);
-    if(!out){ upcoming.push(m); return; }
-    played++; setsFor += out.setsFor; setsAgainst += out.setsAgainst; gamesFor += out.gamesFor; gamesAgainst += out.gamesAgainst;
-    if(out.win) wins++; else if(out.loss) losses++; else if(out.noPlayed) noPlayed++;
-  });
-  upcoming.sort((a,b) => ((a.schedule?.date||"9999-12-31")+" "+(a.schedule?.time||"23:59")).localeCompare((b.schedule?.date||"9999-12-31")+" "+(b.schedule?.time||"23:59")));
-  return { name:playerName(playerId), played,wins,losses,noPlayed,setsFor,setsAgainst,gamesFor,gamesAgainst,gameDifference:gamesFor-gamesAgainst,winRate:played?Math.round((wins/played)*100):0, upcoming:upcoming.slice(0,5) };
-}
-
-function renderPlayerStats(){
-  const stats = computePlayerStats(state.playerId);
-  $("kpis").innerHTML = ""; $("nextMatches").innerHTML = "";
-  if(!stats){
-    $("playerStatsTitle").textContent = "Selecciona un jugador";
-    $("nextMatches").innerHTML = '<span class="muted">Elige un jugador en el filtro para ver sus datos.</span>';
-    return;
-  }
-  $("playerStatsTitle").textContent = stats.name;
-  function k(label, value, sub){ return '<div class="kpi"><div class="k">'+label+'</div><div class="v">'+value+'</div><div class="s">'+(sub||'')+'</div></div>'; }
-  $("kpis").innerHTML = [
-    k("Partidos", stats.played, stats.wins + "V · " + stats.losses + "D · " + stats.noPlayed + " PNJ"),
-    k("Sets", stats.setsFor + "-" + stats.setsAgainst, "Ganados / perdidos"),
-    k("Juegos", stats.gamesFor + "-" + stats.gamesAgainst, "Dif " + (stats.gameDifference > 0 ? "+" : "") + stats.gameDifference),
-    k("Win rate", stats.winRate + "%", "Sobre partidos cerrados")
-  ].join("");
-  if(stats.upcoming.length){
-    $("nextMatches").innerHTML = "<b>Próximos partidos:</b><br>" + stats.upcoming.map(m => {
-      const sched = m.schedule || {};
-      const when = sched.date ? sched.date + (sched.time ? " · " + sched.time : "") : "Sin fecha";
-      return "• " + playerName(m.playerAId) + " vs " + playerName(m.playerBId) + " · " + when;
-    }).join("<br>");
-  } else {
-    $("nextMatches").innerHTML = "<b>Próximos partidos:</b> <span class='muted'>No hay.</span>";
-  }
-}
-
-function fillActionMatchSelects(){
-  const matches = getSchedulableMatches();
-  const html = matches.length
-    ? matches.map(m => '<option value="'+m.id+'">'+playerName(m.playerAId)+' vs '+playerName(m.playerBId)+' · '+getMatchStatus(m)+'</option>').join("")
-    : '<option value="">Sin partidos</option>';
-  $("scheduleMatchPick").innerHTML = html;
-  $("resultMatchPick").innerHTML = html;
-  loadActionForms();
-}
-
-function loadActionForms(){
-  const cat = getCurrentCategory();
-  const schedId = $("scheduleMatchPick").value;
-  const resId = $("resultMatchPick").value;
-  if(cat && schedId && cat.matches[schedId]){
-    const s = cat.matches[schedId].schedule || {};
-    $("schedDate").value = s.date || "";
-    $("schedTime").value = s.time || "";
-    $("schedVenue").value = s.venue || "";
-    $("schedCourt").value = s.court || "";
-    $("schedNotes").value = s.notes || "";
-  }
-  if(cat && resId && cat.matches[resId]){
-    const r = cat.matches[resId].result || {};
-    $("s1a").value = r.s1a ?? "";
-    $("s1b").value = r.s1b ?? "";
-    $("s2a").value = r.s2a ?? "";
-    $("s2b").value = r.s2b ?? "";
-    $("tbA").value = r.tbA ?? "";
-    $("tbB").value = r.tbB ?? "";
-  }
-}
-
-function setMiniStatus(id, text, ok=true){
-  $(id).innerHTML = text ? '<span class="status '+(ok?'jugado':'no_jugado')+'">'+text+'</span>' : "";
-}
-
-async function saveSchedule(){
-  const cat = getCurrentCategory();
-  const matchId = $("scheduleMatchPick").value;
-  if(!cat || !matchId) return setMiniStatus("scheduleStatus", "Selecciona un partido", false);
-  try{
-    await postApi("/save_schedule", {
-      id: TOURNAMENT_ID,
-      categoryId: state.categoryId,
-      matchId,
-      schedule: {
-        date: $("schedDate").value,
-        time: $("schedTime").value,
-        venue: $("schedVenue").value.trim(),
-        court: $("schedCourt").value.trim(),
-        notes: $("schedNotes").value.trim()
-      },
-      by: $("schedBy").value.trim() || "jugador"
-    });
-    setMiniStatus("scheduleStatus", "✅ Programación guardada");
-    await refresh();
-  }catch(err){
-    setMiniStatus("scheduleStatus", "⚠️ " + err.message, false);
-  }
-}
-
-function validSet(a,b){
-  return Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b >= 0 && a !== b && a <= 7 && b <= 7;
-}
-
-async function saveResult(){
-  const cat = getCurrentCategory();
-  const matchId = $("resultMatchPick").value;
-  if(!cat || !matchId) return setMiniStatus("resultStatus", "Selecciona un partido", false);
-
-  const s1a = Number($("s1a").value), s1b = Number($("s1b").value);
-  const s2a = Number($("s2a").value), s2b = Number($("s2b").value);
-  const tbA = $("tbA").value === "" ? null : Number($("tbA").value);
-  const tbB = $("tbB").value === "" ? null : Number($("tbB").value);
-
-  if(!validSet(s1a,s1b) || !validSet(s2a,s2b)){
-    return setMiniStatus("resultStatus", "Revisa los sets 1 y 2", false);
-  }
-
-  try{
-    await postApi("/save_result", {
-      id: TOURNAMENT_ID,
-      categoryId: state.categoryId,
-      matchId,
-      result: { s1a, s1b, s2a, s2b, tbA, tbB },
-      by: $("resultBy").value.trim() || "jugador"
-    });
-    setMiniStatus("resultStatus", "✅ Resultado guardado");
-    await refresh();
-  }catch(err){
-    setMiniStatus("resultStatus", "⚠️ " + err.message, false);
-  }
-}
-
-async function refresh(){
-  await loadTournament();
+  buildCategorySelector();
   renderAll();
-  $("syncBadge").textContent = "Conectado";
 }
 
-function renderAll(){
-  fillCategorySelect();
-  fillRoundSelect();
-  fillPlayerSelect();
-  renderMeta();
-  renderMatches();
-  renderStandings();
-  renderPlayerStats();
-  fillActionMatchSelects();
+// ================= CATEGORY SELECT =================
+function buildCategorySelector() {
+  const sel = document.getElementById("categoryFilter");
+  sel.innerHTML = "";
+
+  Object.values(DATA.categories).forEach(cat => {
+    sel.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+  });
 }
 
-function wire(){
-  $("categoryPick").onchange = () => {
-    state.categoryId = $("categoryPick").value;
-    state.roundId = "__ALL__";
-    state.playerId = "__ALL__";
-    renderAll();
-  };
-  $("roundPick").onchange = () => {
-    state.roundId = $("roundPick").value;
-    renderMatches();
-  };
-  $("playerPick").onchange = () => {
-    state.playerId = $("playerPick").value;
-    renderMatches();
-    renderPlayerStats();
-  };
-  $("scheduleMatchPick").onchange = loadActionForms;
-  $("resultMatchPick").onchange = loadActionForms;
-  $("saveScheduleBtn").onclick = saveSchedule;
-  $("saveResultBtn").onclick = saveResult;
-  $("reloadBtn").onclick = refresh;
+// ================= RENDER =================
+function renderAll() {
+  const catId = document.getElementById("categoryFilter").value;
+  const cat = DATA.categories[catId];
+
+  renderAvailability();
+  renderMatches(cat);
+  renderTable(cat);
 }
 
-async function init(){
-  wire();
-  try{
-    await loadTournament();
-    const cats = getCategories();
-    if(cats.length && !state.categoryId) state.categoryId = cats[0].id;
-    renderAll();
-    $("syncBadge").textContent = "Conectado";
-  }catch(err){
-    $("syncBadge").textContent = "Error";
-    $("matchList").innerHTML = '<div class="empty">No se pudo cargar el torneo.<br><br><span class="muted">'+err.message+'</span></div>';
+// ================= AVAILABILITY =================
+function renderAvailability() {
+  let html = "";
+
+  const weeks = Object.values(DATA.availability || {});
+
+  if (weeks.length === 0) {
+    html = "No publicada aún";
   }
+
+  weeks.forEach(w => {
+    html += `<div class="card availability">
+      <b>${w.weekKey}</b><br>`;
+
+    w.slots.forEach(s => {
+      html += `${s.date} ${s.time} - ${s.place} (${s.court})<br>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById("availability").innerHTML = html;
 }
 
-init();
+// ================= MATCH STATUS =================
+function getStatus(m) {
+  if (m.result) return "played";
+  if (m.postponed) return "postponed";
+  if (m.noPlayed) return "postponed";
+  return "pending";
+}
+
+// ================= MATCHES =================
+function renderMatches(cat) {
+  let html = "";
+
+  Object.values(cat.matches).forEach(m => {
+
+    const pA = cat.players[m.playerAId]?.name || m.playerAId;
+    const pB = cat.players[m.playerBId]?.name || m.playerBId;
+
+    const status = getStatus(m);
+
+    html += `<div class="card match ${status}">
+      <b>${pA} vs ${pB}</b><br>
+
+      📅 ${m.schedule?.date || "-"}  
+      ⏰ ${m.schedule?.time || "-"}  
+      📍 ${m.schedule?.place || "-"}  
+      🎾 ${m.schedule?.court || "-"}
+
+      <br><br>
+
+      ${renderResult(m)}
+
+      <div class="small">${status}</div>
+    </div>`;
+  });
+
+  document.getElementById("matches").innerHTML = html;
+}
+
+// ================= RESULT =================
+function renderResult(m) {
+  if (!m.result) return "Sin resultado";
+
+  return `
+  ${m.result.s1a}-${m.result.s1b}
+  ${m.result.s2a}-${m.result.s2b}
+  ${m.result.s3a || ""}-${m.result.s3b || ""}
+  `;
+}
+
+// ================= TABLE =================
+function renderTable(cat) {
+
+  const stats = {};
+
+  Object.values(cat.players).forEach(p => {
+    stats[p.id] = {
+      name: p.name,
+      pts: 0,
+      played: 0,
+      won: 0,
+      lost: 0,
+      setsWon: 0,
+      setsLost: 0,
+      gamesWon: 0,
+      gamesLost: 0
+    };
+  });
+
+  Object.values(cat.matches).forEach(m => {
+
+    if (!m.result) return;
+
+    const A = stats[m.playerAId];
+    const B = stats[m.playerBId];
+
+    A.played++; B.played++;
+
+    let setsA = 0, setsB = 0;
+
+    const sets = [
+      [m.result.s1a, m.result.s1b],
+      [m.result.s2a, m.result.s2b],
+      [m.result.s3a, m.result.s3b]
+    ];
+
+    sets.forEach(s => {
+      if (!s[0] && !s[1]) return;
+
+      if (s[0] > s[1]) setsA++;
+      else setsB++;
+
+      A.gamesWon += s[0] || 0;
+      A.gamesLost += s[1] || 0;
+
+      B.gamesWon += s[1] || 0;
+      B.gamesLost += s[0] || 0;
+    });
+
+    A.setsWon += setsA;
+    A.setsLost += setsB;
+
+    B.setsWon += setsB;
+    B.setsLost += setsA;
+
+    if (setsA > setsB) {
+      A.won++; B.lost++;
+      A.pts += 3;
+    } else {
+      B.won++; A.lost++;
+      B.pts += 3;
+    }
+  });
+
+  const sorted = Object.values(stats).sort((a,b) =>
+    b.pts - a.pts ||
+    (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost) ||
+    (b.gamesWon - b.gamesLost) - (a.gamesWon - a.gamesLost)
+  );
+
+  let html = `
+  <tr>
+    <th>Jugador</th>
+    <th>Pts</th>
+    <th>PJ</th>
+    <th>G</th>
+    <th>P</th>
+    <th>Sets</th>
+    <th>Games</th>
+  </tr>`;
+
+  sorted.forEach(p => {
+    html += `
+    <tr>
+      <td>${p.name}</td>
+      <td>${p.pts}</td>
+      <td>${p.played}</td>
+      <td>${p.won}</td>
+      <td>${p.lost}</td>
+      <td>${p.setsWon}-${p.setsLost}</td>
+      <td>${p.gamesWon}-${p.gamesLost}</td>
+    </tr>`;
+  });
+
+  document.getElementById("table").innerHTML = html;
+}
+
+// ================= INIT =================
+load();
+
 </script>
+
 </body>
 </html>
