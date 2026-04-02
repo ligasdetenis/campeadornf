@@ -5,306 +5,130 @@
 <title>Liga Tenis</title>
 
 <style>
-body {
-  font-family: Arial;
-  margin: 0;
-  padding: 10px;
-  background: #f5f5f5;
-}
-
-h1 { text-align: center }
-
-.section {
-  margin: 20px 0;
-}
+body { font-family:Arial; background:#f5f5f5; padding:10px }
 
 .card {
-  background: white;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background:white;
+  margin:8px 0;
+  padding:10px;
+  border-radius:8px;
 }
 
-.availability {
-  background: #e8f4ff;
-}
+.played { border-left:5px solid green }
+.pending { border-left:5px solid orange }
+.postponed { border-left:5px solid red }
 
-.match {
-  border-left: 5px solid #ccc;
-}
-
-.played { border-color: #4caf50 }
-.pending { border-color: orange }
-.postponed { border-color: red }
-
-.table-container {
-  overflow-x: auto;
-}
+.table-container { overflow-x:auto }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
+  width:100%;
+  border-collapse:collapse;
 }
 
-th, td {
-  padding: 6px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-}
-
-select, button {
-  padding: 6px;
-  margin: 5px 0;
-}
-
-.small {
-  font-size: 12px;
-  color: gray;
+th,td {
+  padding:6px;
+  border-bottom:1px solid #ddd;
+  text-align:center;
 }
 </style>
-
 </head>
 
 <body>
 
-<h1>🏆 Liga de Tenis</h1>
+<h1>🏆 Liga</h1>
 
-<button onclick="load()">🔄 Actualizar</button>
+<select id="cat" onchange="render()"></select>
 
-<br>
-
-<select id="categoryFilter" onchange="renderAll()"></select>
-
-<!-- DISPONIBILIDAD -->
-<div class="section">
-<h2>📅 Disponibilidad de pistas</h2>
-<div id="availability"></div>
-</div>
-
-<!-- PARTIDOS -->
-<div class="section">
-<h2>🎾 Partidos</h2>
 <div id="matches"></div>
-</div>
 
-<!-- CLASIFICACIÓN -->
-<div class="section">
-<h2>📊 Clasificación</h2>
 <div class="table-container">
 <table id="table"></table>
-</div>
 </div>
 
 <script>
 
 const API = "https://liga-campeador-api.ligasdetenis.workers.dev";
-const ID = "liga1";
+const ID = "liga-no-federada-campeador";
 
-let DATA = null;
+let DATA;
 
-// ================= LOAD =================
-async function load() {
-  const res = await fetch(API + "/get?id=" + ID);
+// LOAD
+async function load(){
+  const res = await fetch(API+"/get?id="+ID);
   const json = await res.json();
   DATA = json.data;
 
-  buildCategorySelector();
-  renderAll();
-}
-
-// ================= CATEGORY SELECT =================
-function buildCategorySelector() {
-  const sel = document.getElementById("categoryFilter");
+  const sel = document.getElementById("cat");
   sel.innerHTML = "";
 
-  Object.values(DATA.categories).forEach(cat => {
-    sel.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+  Object.values(DATA.categories).forEach(c=>{
+    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
+
+  render();
 }
 
-// ================= RENDER =================
-function renderAll() {
-  const catId = document.getElementById("categoryFilter").value;
-  const cat = DATA.categories[catId];
+// RENDER
+function render(){
+  const cat = DATA.categories[document.getElementById("cat").value];
 
-  renderAvailability();
   renderMatches(cat);
   renderTable(cat);
 }
 
-// ================= AVAILABILITY =================
-function renderAvailability() {
-  let html = "";
+// MATCHES
+function renderMatches(cat){
+  let html="";
 
-  const weeks = Object.values(DATA.availability || {});
+  Object.values(cat.matches).forEach(m=>{
+    const pA = cat.players[m.playerAId]?.name;
+    const pB = cat.players[m.playerBId]?.name;
 
-  if (weeks.length === 0) {
-    html = "No publicada aún";
-  }
+    let status="pending";
+    if(m.result) status="played";
+    if(m.postponed) status="postponed";
 
-  weeks.forEach(w => {
-    html += `<div class="card availability">
-      <b>${w.weekKey}</b><br>`;
-
-    w.slots.forEach(s => {
-      html += `${s.date} ${s.time} - ${s.place} (${s.court})<br>`;
-    });
-
-    html += `</div>`;
-  });
-
-  document.getElementById("availability").innerHTML = html;
-}
-
-// ================= MATCH STATUS =================
-function getStatus(m) {
-  if (m.result) return "played";
-  if (m.postponed) return "postponed";
-  if (m.noPlayed) return "postponed";
-  return "pending";
-}
-
-// ================= MATCHES =================
-function renderMatches(cat) {
-  let html = "";
-
-  Object.values(cat.matches).forEach(m => {
-
-    const pA = cat.players[m.playerAId]?.name || m.playerAId;
-    const pB = cat.players[m.playerBId]?.name || m.playerBId;
-
-    const status = getStatus(m);
-
-    html += `<div class="card match ${status}">
-      <b>${pA} vs ${pB}</b><br>
-
-      📅 ${m.schedule?.date || "-"}  
-      ⏰ ${m.schedule?.time || "-"}  
-      📍 ${m.schedule?.place || "-"}  
-      🎾 ${m.schedule?.court || "-"}
-
-      <br><br>
-
-      ${renderResult(m)}
-
-      <div class="small">${status}</div>
+    html+=`
+    <div class="card ${status}">
+      ${pA} vs ${pB}<br>
+      ${m.schedule?.date || ""} ${m.schedule?.time || ""}<br>
+      ${m.result ? `${m.result.s1a}-${m.result.s1b} ${m.result.s2a}-${m.result.s2b}` : ""}
     </div>`;
   });
 
-  document.getElementById("matches").innerHTML = html;
+  document.getElementById("matches").innerHTML=html;
 }
 
-// ================= RESULT =================
-function renderResult(m) {
-  if (!m.result) return "Sin resultado";
+// TABLE
+function renderTable(cat){
 
-  return `
-  ${m.result.s1a}-${m.result.s1b}
-  ${m.result.s2a}-${m.result.s2b}
-  ${m.result.s3a || ""}-${m.result.s3b || ""}
-  `;
-}
+  let stats={};
 
-// ================= TABLE =================
-function renderTable(cat) {
-
-  const stats = {};
-
-  Object.values(cat.players).forEach(p => {
-    stats[p.id] = {
-      name: p.name,
-      pts: 0,
-      played: 0,
-      won: 0,
-      lost: 0,
-      setsWon: 0,
-      setsLost: 0,
-      gamesWon: 0,
-      gamesLost: 0
-    };
+  Object.values(cat.players).forEach(p=>{
+    stats[p.id]={name:p.name,pts:0};
   });
 
-  Object.values(cat.matches).forEach(m => {
+  Object.values(cat.matches).forEach(m=>{
+    if(!m.result) return;
 
-    if (!m.result) return;
-
-    const A = stats[m.playerAId];
-    const B = stats[m.playerBId];
-
-    A.played++; B.played++;
-
-    let setsA = 0, setsB = 0;
-
-    const sets = [
-      [m.result.s1a, m.result.s1b],
-      [m.result.s2a, m.result.s2b],
-      [m.result.s3a, m.result.s3b]
-    ];
-
-    sets.forEach(s => {
-      if (!s[0] && !s[1]) return;
-
-      if (s[0] > s[1]) setsA++;
-      else setsB++;
-
-      A.gamesWon += s[0] || 0;
-      A.gamesLost += s[1] || 0;
-
-      B.gamesWon += s[1] || 0;
-      B.gamesLost += s[0] || 0;
-    });
-
-    A.setsWon += setsA;
-    A.setsLost += setsB;
-
-    B.setsWon += setsB;
-    B.setsLost += setsA;
-
-    if (setsA > setsB) {
-      A.won++; B.lost++;
-      A.pts += 3;
+    if(m.result.s1a > m.result.s1b){
+      stats[m.playerAId].pts+=3;
     } else {
-      B.won++; A.lost++;
-      B.pts += 3;
+      stats[m.playerBId].pts+=3;
     }
   });
 
-  const sorted = Object.values(stats).sort((a,b) =>
-    b.pts - a.pts ||
-    (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost) ||
-    (b.gamesWon - b.gamesLost) - (a.gamesWon - a.gamesLost)
-  );
+  let rows = Object.values(stats).sort((a,b)=>b.pts-a.pts);
 
-  let html = `
-  <tr>
-    <th>Jugador</th>
-    <th>Pts</th>
-    <th>PJ</th>
-    <th>G</th>
-    <th>P</th>
-    <th>Sets</th>
-    <th>Games</th>
-  </tr>`;
+  let html="<tr><th>Jugador</th><th>Pts</th></tr>";
 
-  sorted.forEach(p => {
-    html += `
-    <tr>
-      <td>${p.name}</td>
-      <td>${p.pts}</td>
-      <td>${p.played}</td>
-      <td>${p.won}</td>
-      <td>${p.lost}</td>
-      <td>${p.setsWon}-${p.setsLost}</td>
-      <td>${p.gamesWon}-${p.gamesLost}</td>
-    </tr>`;
+  rows.forEach(p=>{
+    html+=`<tr><td>${p.name}</td><td>${p.pts}</td></tr>`;
   });
 
-  document.getElementById("table").innerHTML = html;
+  document.getElementById("table").innerHTML=html;
 }
 
-// ================= INIT =================
 load();
 
 </script>
