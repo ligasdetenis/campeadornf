@@ -1,870 +1,435 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin v3 · Liga no federada Campeador</title>
-  <style>
-    :root{
-      --bg:#070A13; --card:#121C3A; --line:rgba(255,255,255,.10);
-      --muted:#9bb0da; --text:#eef2ff; --accent:#7c5cff;
-      --ok:#35d07f; --warn:#ffcc66; --danger:#ff6b6b;
-      --info:#8fd3ff;
-      --shadow:0 12px 30px rgba(0,0,0,.35); --r:16px;
+export default {
+  async fetch(request, env) {
+    const headers = {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    };
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers });
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(124,92,255,.25), transparent 60%),
-        radial-gradient(1000px 500px at 95% 0%, rgba(53,208,127,.18), transparent 55%),
-        linear-gradient(180deg,#070A13,#050711);
+
+    const url = new URL(request.url);
+    const ADMIN_KEY = "1234";
+
+    async function getTournament(id) {
+      const raw = await env.DB.get(id);
+      return raw ? JSON.parse(raw) : null;
     }
-    header{position:sticky;top:0;z-index:10;background:rgba(7,10,19,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-    .wrap{max-width:1320px;margin:0 auto;padding:14px}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    h1{margin:0;font-size:18px}
-    .sub{font-size:12px;color:var(--muted);margin-top:6px}
-    main{max-width:1320px;margin:0 auto;padding:14px;display:grid;gap:14px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-    .gridWide{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
-    @media (max-width:980px){.grid,.grid3,.gridWide{grid-template-columns:1fr}}
-    .card{background:rgba(18,28,58,.86);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
-    .card h2{margin:0;padding:12px 14px;font-size:14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .pad{padding:14px}
-    label{display:block;font-size:12px;color:var(--muted);margin:6px 0}
-    input,select,textarea{
-      width:100%;padding:10px 12px;border-radius:12px;
-      border:1px solid rgba(255,255,255,.16);
-      background:rgba(255,255,255,.06);color:var(--text);outline:none
+
+    async function saveTournament(id, data) {
+      data.meta = data.meta || {};
+      data.meta.updatedAt = new Date().toISOString();
+      await env.DB.put(id, JSON.stringify(data));
     }
-    textarea{min-height:92px;resize:vertical}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    button{
-      cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.16);
-      background:rgba(124,92,255,.22);color:var(--text);font-weight:900
+
+    function json(data, status = 200) {
+      return new Response(JSON.stringify(data), { status, headers });
     }
-    button.secondary{background:transparent}
-    button.warn{background:rgba(255,204,102,.16)}
-    button.danger{background:rgba(255,107,107,.18)}
-    .status{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.14);color:var(--muted);margin-top:10px}
-    .ok{color:var(--ok);border-color:rgba(53,208,127,.35);background:rgba(53,208,127,.08)}
-    .bad{color:var(--danger);border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
-    .muted{color:var(--muted)}
-    .hint{font-size:12px;color:var(--muted);line-height:1.4;margin-top:8px}
-    .list{display:grid;gap:8px}
-    .item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.04)}
-    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .split3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    @media (max-width:700px){.split,.split3{grid-template-columns:1fr}}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted)}
-    .inlineActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .inlineActions button{padding:6px 10px;font-size:12px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px 8px;border-bottom:1px solid var(--line);font-size:13px;text-align:left;vertical-align:top}
-    th{color:var(--muted);font-weight:950}
-    .tableWrap{overflow:auto}
-    .tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:11px;border:1px solid rgba(255,255,255,.14)}
-    .tag.pending{color:#c9d1e6}
-    .tag.programado{color:var(--info);border-color:rgba(143,211,255,.35);background:rgba(143,211,255,.08)}
-    .tag.jugado{color:var(--ok);border-color:rgba(53,208,127,.35);background:rgba(53,208,127,.08)}
-    .tag.aplazado{color:var(--warn);border-color:rgba(255,204,102,.35);background:rgba(255,204,102,.08)}
-    .tag.no_jugado{color:var(--danger);border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
-    .calHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-    .calTable{width:100%;border-collapse:separate;border-spacing:6px;table-layout:fixed}
-    .calTable th{color:var(--muted);font-size:10.5px;font-weight:950;text-align:center;padding:8px 0;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
-    .calTable td{vertical-align:top;padding:0;border:none}
-    .dayCell{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:12px;padding:7px;min-height:92px;height:92px;overflow:hidden;display:flex;flex-direction:column;gap:5px}
-    .dayCell .n{font-weight:1000;font-size:11px;color:var(--muted);line-height:1;text-align:right}
-    .events{display:flex;flex-direction:column;gap:5px;overflow:auto;max-height:68px;padding-right:2px}
-    .evt{border-left:3px solid rgba(124,92,255,.8);padding:4px 6px;border-radius:10px;background:rgba(124,92,255,.10);font-size:11px;line-height:1.15;cursor:pointer}
-    .evt .t{color:var(--muted);font-size:10px;font-weight:950}
-    .evt.programado{border-left-color:rgba(143,211,255,.8);background:rgba(143,211,255,.08)}
-    .evt.jugado{border-left-color:rgba(53,208,127,.8);background:rgba(53,208,127,.08)}
-    .evt.aplazado{border-left-color:rgba(255,204,102,.8);background:rgba(255,204,102,.08)}
-    .evt.no_jugado{border-left-color:rgba(255,107,107,.8);background:rgba(255,107,107,.08)}
-  </style>
-</head>
-<body>
-<header>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1>⚙️ Admin v3 · Liga no federada Campeador</h1>
-        <div class="sub">Ahora con tabla completa de partidos y calendario mensual para editar rápido.</div>
-      </div>
-      <div class="pill" id="loadedBadge">Sin cargar</div>
-    </div>
-  </div>
-</header>
 
-<main>
-  <section class="card">
-    <h2><span>1. Configuración</span><span class="muted">Conexión</span></h2>
-    <div class="pad grid3">
-      <div><label>URL del Worker</label><input id="workerUrl" value="https://liga-campeador-api.ligasdetenis.workers.dev" /></div>
-      <div><label>ID del torneo</label><input id="tournamentId" value="liga-no-federada-campeador" /></div>
-      <div><label>Clave admin</label><input id="adminKey" type="password" value="1234" /></div>
-    </div>
-    <div class="pad" style="padding-top:0">
-      <div class="btns">
-        <button id="createTournamentBtn">Crear torneo</button>
-        <button class="secondary" id="loadTournamentBtn">Cargar torneo</button>
-      </div>
-      <div id="globalStatus"></div>
-    </div>
-  </section>
+    function hasMatchesInRound(category, roundId) {
+      return Object.values(category.matches || {}).some((m) => m.roundId === roundId);
+    }
 
-  <section class="grid">
-    <section class="card">
-      <h2>2. Categorías</h2>
-      <div class="pad">
-        <label>ID de categoría</label><input id="categoryId" placeholder="sub14-m" />
-        <label>Nombre</label><input id="categoryName" placeholder="Infantil Sub-14 Masculino" />
-        <div class="btns">
-          <button id="addCategoryBtn">Añadir categoría</button>
-          <button class="secondary" id="updateCategoryBtn">Editar seleccionada</button>
-        </div>
-      </div>
-      <div class="pad" style="padding-top:0"><div id="categoryList" class="list"></div></div>
-    </section>
+    function hasMatchesForPlayer(category, playerId) {
+      return Object.values(category.matches || {}).some(
+        (m) => m.playerAId === playerId || m.playerBId === playerId
+      );
+    }
 
-    <section class="card">
-      <h2>3. Jugadores</h2>
-      <div class="pad">
-        <label>Categoría</label><select id="playerCategory"></select>
-        <label>Nombre del jugador</label><input id="playerName" placeholder="Carlos Pérez" />
-        <div class="btns">
-          <button id="addPlayerBtn">Añadir jugador</button>
-          <button class="secondary" id="updatePlayerBtn">Editar seleccionado</button>
-        </div>
-        <label>Pegado masivo (uno por línea)</label>
-        <textarea id="bulkPlayers" placeholder="Carlos Pérez&#10;Miguel López"></textarea>
-        <div class="btns"><button class="warn" id="bulkPlayersBtn">Cargar lista</button></div>
-      </div>
-      <div class="pad" style="padding-top:0"><div id="playerList" class="list"></div></div>
-    </section>
-  </section>
+    try {
+      if (url.pathname === "/get") {
+        const id = url.searchParams.get("id");
+        if (!id) return json({ success: false, error: "Falta id" }, 400);
 
-  <section class="grid">
-    <section class="card">
-      <h2>4. Jornadas</h2>
-      <div class="pad">
-        <label>Categoría</label><select id="roundCategory"></select>
-        <label>Nombre de jornada</label><input id="roundName" placeholder="Jornada 1" />
-        <div class="btns">
-          <button id="addRoundBtn">Crear jornada</button>
-          <button class="secondary" id="updateRoundBtn">Editar seleccionada</button>
-        </div>
-      </div>
-      <div class="pad" style="padding-top:0"><div id="roundList" class="list"></div></div>
-    </section>
+        const tournament = await getTournament(id);
+        if (!tournament) {
+          return json({ success: false, error: "No existe el torneo" }, 404);
+        }
 
-    <section class="card">
-      <h2>5. Partidos</h2>
-      <div class="pad">
-        <label>Categoría</label><select id="matchCategory"></select>
-        <label>Jornada</label><select id="matchRound"></select>
-        <div class="split">
-          <div><label>Jugador A</label><select id="playerA"></select></div>
-          <div><label>Jugador B</label><select id="playerB"></select></div>
-        </div>
-        <div class="btns">
-          <button id="addMatchBtn">Crear partido</button>
-          <button class="secondary" id="updateMatchBtn">Editar seleccionado</button>
-        </div>
-      </div>
-      <div class="pad" style="padding-top:0"><div id="matchList" class="list"></div></div>
-    </section>
-  </section>
+        return json({ success: true, data: tournament });
+      }
 
-  <section class="gridWide">
-    <section class="card">
-      <h2><span>6. Tabla completa de partidos</span><span class="muted" id="tableMeta"></span></h2>
-      <div class="pad">
-        <div class="grid3">
-          <div><label>Categoría</label><select id="tableCategory"></select></div>
-          <div><label>Estado</label>
-            <select id="tableStatus">
-              <option value="__ALL__">Todos</option>
-              <option value="pendiente">Pendientes</option>
-              <option value="programado">Programados</option>
-              <option value="jugado">Jugados</option>
-              <option value="aplazado">Aplazados</option>
-              <option value="no_jugado">No jugados</option>
-            </select>
-          </div>
-          <div><label>Jornada</label><select id="tableRound"></select></div>
-        </div>
-        <div class="tableWrap" style="margin-top:12px">
-          <table>
-            <thead>
-              <tr>
-                <th>Jornada</th>
-                <th>Partido</th>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Lugar</th>
-                <th>Pista</th>
-                <th>Estado</th>
-                <th>Resultado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody id="matchesTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+      if (request.method !== "POST") {
+        return json({ success: false, error: "Método no permitido" }, 405);
+      }
 
-    <section class="card">
-      <h2><span>7. Calendario mensual</span><span class="muted" id="calendarMeta"></span></h2>
-      <div class="pad">
-        <div class="calHeader">
-          <div class="split" style="width:100%">
-            <div><label>Categoría</label><select id="calendarCategory"></select></div>
-            <div><label>Mes</label>
-              <select id="calendarMonth">
-                <option value="2026-01">Enero 2026</option>
-                <option value="2026-02">Febrero 2026</option>
-                <option value="2026-03">Marzo 2026</option>
-                <option value="2026-04">Abril 2026</option>
-                <option value="2026-05">Mayo 2026</option>
-                <option value="2026-06">Junio 2026</option>
-                <option value="2026-07">Julio 2026</option>
-                <option value="2026-08">Agosto 2026</option>
-                <option value="2026-09">Septiembre 2026</option>
-                <option value="2026-10">Octubre 2026</option>
-                <option value="2026-11">Noviembre 2026</option>
-                <option value="2026-12">Diciembre 2026</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div id="calendarWrap"></div>
-      </div>
-    </section>
-  </section>
+      const body = await request.json();
 
-  <section class="card">
-    <h2>8. Gestión rápida de partido</h2>
-    <div class="pad">
-      <div class="split">
-        <div><label>Categoría</label><select id="manageCategory"></select></div>
-        <div><label>Partido</label><select id="manageMatch"></select></div>
-      </div>
+      if (url.pathname === "/create") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
 
-      <div class="grid" style="margin-top:14px">
-        <div class="item">
-          <b>Programación</b>
-          <div class="split">
-            <div><label>Fecha</label><input id="schedDate" type="date"></div>
-            <div><label>Hora</label><input id="schedTime" type="time"></div>
-          </div>
-          <div class="split">
-            <div><label>Lugar</label><input id="schedVenue" placeholder="Club Campeador"></div>
-            <div><label>Pista</label><input id="schedCourt" placeholder="Pista 2"></div>
-          </div>
-          <label>Observaciones</label><input id="schedNotes" placeholder="Notas opcionales">
-          <label>Actualizado por</label><input id="schedBy" placeholder="Nombre">
-          <div class="btns">
-            <button id="saveScheduleBtn">Guardar programación</button>
-            <button class="danger" id="clearScheduleBtn">Borrar programación</button>
-          </div>
-        </div>
+        if (!body.id || !body.name) {
+          return json({ success: false, error: "Faltan datos" }, 400);
+        }
 
-        <div class="item">
-          <b>Resultado</b>
-          <div class="split3">
-            <div><label>Set 1 A</label><input id="s1a" type="number" min="0" max="7"></div>
-            <div><label>Set 1 B</label><input id="s1b" type="number" min="0" max="7"></div>
-            <div></div>
-          </div>
-          <div class="split3">
-            <div><label>Set 2 A</label><input id="s2a" type="number" min="0" max="7"></div>
-            <div><label>Set 2 B</label><input id="s2b" type="number" min="0" max="7"></div>
-            <div></div>
-          </div>
-          <div class="split3">
-            <div><label>Super TB A</label><input id="tbA" type="number" min="0" max="99"></div>
-            <div><label>Super TB B</label><input id="tbB" type="number" min="0" max="99"></div>
-            <div></div>
-          </div>
-          <label>Subido por</label><input id="resultBy" placeholder="Nombre">
-          <div class="btns">
-            <button id="saveResultBtn">Guardar resultado</button>
-            <button class="danger" id="clearResultBtn">Borrar resultado</button>
-          </div>
-        </div>
-      </div>
+        const tournament = {
+          tournamentId: body.id,
+          name: body.name,
+          season: "2026-2027",
+          categories: {},
+          venues: [],
+          meta: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        };
 
-      <div class="item" style="margin-top:14px">
-        <b>Estados especiales</b>
-        <div class="btns">
-          <button class="warn" id="markPostponedBtn">Marcar aplazado</button>
-          <button class="warn" id="unmarkPostponedBtn">Quitar aplazado</button>
-          <button class="danger" id="markNoPlayedBtn">Marcar no jugado</button>
-          <button class="secondary" id="unmarkNoPlayedBtn">Quitar no jugado</button>
-          <button class="danger" id="deleteMatchBtn">Eliminar partido</button>
-        </div>
-      </div>
+        await saveTournament(body.id, tournament);
+        return json({ success: true });
+      }
 
-      <div id="manageInfo" class="hint"></div>
-    </div>
-  </section>
-</main>
+      if (url.pathname === "/add_category") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
 
-<script>
-const state = {
-  tournament: null,
-  selectedCategoryId: "",
-  selectedPlayerId: "",
-  selectedRoundId: "",
-  selectedMatchId: "",
-  tableCategoryId: "",
-  tableRoundId: "__ALL__",
-  tableStatus: "__ALL__",
-  calendarCategoryId: "",
-  calendarMonth: "2026-03"
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        t.categories[body.categoryId] = {
+          id: body.categoryId,
+          name: body.name,
+          players: {},
+          rounds: {},
+          matches: {}
+        };
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/update_category") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        cat.name = body.name;
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/delete_category") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        delete t.categories[body.categoryId];
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/add_player") {
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const playerId = "p-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+
+        cat.players[playerId] = {
+          id: playerId,
+          name: body.name,
+          active: true
+        };
+
+        await saveTournament(body.id, t);
+        return json({ success: true, playerId });
+      }
+
+      if (url.pathname === "/update_player") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const player = cat.players[body.playerId];
+        if (!player) return json({ success: false, error: "Jugador no encontrado" }, 404);
+
+        player.name = body.name;
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/delete_player") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        if (hasMatchesForPlayer(cat, body.playerId)) {
+          return json({ success: false, error: "No se puede borrar: el jugador tiene partidos asignados" }, 409);
+        }
+
+        delete cat.players[body.playerId];
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/add_round") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const roundId = "r-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+
+        cat.rounds[roundId] = {
+          id: roundId,
+          name: body.name,
+          published: true
+        };
+
+        await saveTournament(body.id, t);
+        return json({ success: true, roundId });
+      }
+
+      if (url.pathname === "/update_round") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const round = cat.rounds[body.roundId];
+        if (!round) return json({ success: false, error: "Jornada no encontrada" }, 404);
+
+        round.name = body.name;
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/delete_round") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        if (hasMatchesInRound(cat, body.roundId)) {
+          return json({ success: false, error: "No se puede borrar: la jornada tiene partidos" }, 409);
+        }
+
+        delete cat.rounds[body.roundId];
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/add_match") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const matchId = "m-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+
+        cat.matches[matchId] = {
+          id: matchId,
+          roundId: body.roundId,
+          playerAId: body.playerAId,
+          playerBId: body.playerBId,
+          schedule: {},
+          result: null,
+          postponed: false,
+          noPlayed: false,
+          history: [],
+          meta: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        };
+
+        await saveTournament(body.id, t);
+        return json({ success: true, matchId });
+      }
+
+      if (url.pathname === "/update_match") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const match = cat.matches[body.matchId];
+        if (!match) return json({ success: false, error: "Partido no encontrado" }, 404);
+
+        if (body.roundId) match.roundId = body.roundId;
+        if (body.playerAId) match.playerAId = body.playerAId;
+        if (body.playerBId) match.playerBId = body.playerBId;
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/delete_match") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        delete cat.matches[body.matchId];
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/save_schedule") {
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const match = cat.matches[body.matchId];
+        if (!match) return json({ success: false, error: "Partido no encontrado" }, 404);
+
+        match.schedule = body.schedule || {};
+        match.meta = match.meta || {};
+        match.meta.updatedAt = new Date().toISOString();
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/clear_schedule") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const match = cat.matches[body.matchId];
+        if (!match) return json({ success: false, error: "Partido no encontrado" }, 404);
+
+        match.schedule = {};
+        match.meta = match.meta || {};
+        match.meta.updatedAt = new Date().toISOString();
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/save_result") {
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const match = cat.matches[body.matchId];
+        if (!match) return json({ success: false, error: "Partido no encontrado" }, 404);
+
+        match.result = body.result || null;
+        match.meta = match.meta || {};
+        match.meta.updatedAt = new Date().toISOString();
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/clear_result") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const match = cat.matches[body.matchId];
+        if (!match) return json({ success: false, error: "Partido no encontrado" }, 404);
+
+        match.result = null;
+        match.meta = match.meta || {};
+        match.meta.updatedAt = new Date().toISOString();
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      if (url.pathname === "/set_match_flags") {
+        if (body.adminKey !== ADMIN_KEY) {
+          return json({ success: false, error: "Clave admin incorrecta" }, 403);
+        }
+
+        const t = await getTournament(body.id);
+        if (!t) return json({ success: false, error: "Torneo no encontrado" }, 404);
+
+        const cat = t.categories[body.categoryId];
+        if (!cat) return json({ success: false, error: "Categoría no encontrada" }, 404);
+
+        const match = cat.matches[body.matchId];
+        if (!match) return json({ success: false, error: "Partido no encontrado" }, 404);
+
+        match.postponed = !!body.postponed;
+        match.noPlayed = !!body.noPlayed;
+        match.meta = match.meta || {};
+        match.meta.updatedAt = new Date().toISOString();
+
+        await saveTournament(body.id, t);
+        return json({ success: true });
+      }
+
+      return json({ success: false, error: "Ruta no encontrada" }, 404);
+
+    } catch (err) {
+      return json({ success: false, error: err.message || "Error interno" }, 500);
+    }
+  }
 };
-
-function $(id){ return document.getElementById(id); }
-function workerBase(){ return $("workerUrl").value.trim().replace(/\/+$/,''); }
-function tournamentId(){ return $("tournamentId").value.trim(); }
-function adminKey(){ return $("adminKey").value.trim(); }
-
-async function api(path, body=null, method="POST"){
-  const url = workerBase() + path;
-  const opts = { method, headers:{} };
-  if(body){
-    opts.headers["Content-Type"] = "application/json";
-    opts.body = JSON.stringify(body);
-  }
-  const res = await fetch(url, opts);
-  return await res.json().catch(() => ({ success:false, error:"Respuesta inválida" }));
-}
-
-function setStatus(text, ok=true){
-  $("globalStatus").innerHTML = text ? '<div class="status '+(ok?'ok':'bad')+'">'+text+'</div>' : "";
-}
-function currentCategoryObj(selectId){ return state.tournament?.categories?.[$(selectId).value] || null; }
-function categoryById(id){ return state.tournament?.categories?.[id] || null; }
-function playerName(cat, playerId){ return cat?.players?.[playerId]?.name || playerId || ""; }
-
-function getMatchStatus(match){
-  if(match?.result) return "jugado";
-  if(match?.noPlayed) return "no_jugado";
-  if(match?.postponed) return "aplazado";
-  const s = match?.schedule || {};
-  if(s.date && s.time && (s.venue || s.venueId || s.venueText)) return "programado";
-  return "pendiente";
-}
-function formatResult(r){
-  if(!r) return "—";
-  const parts = [];
-  if(r.s1a != null && r.s1b != null) parts.push(r.s1a + "-" + r.s1b);
-  if(r.s2a != null && r.s2b != null) parts.push(r.s2a + "-" + r.s2b);
-  if(r.tbA != null && r.tbB != null) parts.push("STB " + r.tbA + "-" + r.tbB);
-  return parts.join(" · ");
-}
-
-async function createTournament(){
-  const r = await api("/create", { adminKey: adminKey(), id: tournamentId(), name: "I Liga no federada Club de Tenis Campeador" });
-  if(!r.success) return setStatus(r.error || "Error al crear torneo", false);
-  setStatus("✅ Torneo creado");
-  await loadTournament();
-}
-async function loadTournament(){
-  const r = await api("/get?id=" + encodeURIComponent(tournamentId()), null, "GET");
-  if(!r.success || !r.data) return setStatus(r.error || "No se pudo cargar el torneo", false);
-  state.tournament = r.data;
-  $("loadedBadge").textContent = "Torneo cargado";
-  renderAll();
-  setStatus("✅ Torneo cargado");
-}
-
-async function addCategory(){
-  const r = await api("/add_category", { adminKey: adminKey(), id: tournamentId(), categoryId: $("categoryId").value.trim(), name: $("categoryName").value.trim() });
-  if(!r.success) return setStatus(r.error || "No se pudo añadir categoría", false);
-  $("categoryId").value = ""; $("categoryName").value = "";
-  await loadTournament();
-}
-async function updateCategory(){
-  if(!state.selectedCategoryId) return setStatus("Selecciona una categoría de la lista", false);
-  const r = await api("/update_category", { adminKey: adminKey(), id: tournamentId(), categoryId: state.selectedCategoryId, name: $("categoryName").value.trim() });
-  if(!r.success) return setStatus(r.error || "No se pudo editar la categoría", false);
-  await loadTournament();
-}
-async function deleteCategory(categoryId){
-  if(!confirm("¿Eliminar esta categoría con todo su contenido?")) return;
-  const r = await api("/delete_category", { adminKey: adminKey(), id: tournamentId(), categoryId });
-  if(!r.success) return setStatus(r.error || "No se pudo borrar la categoría", false);
-  await loadTournament();
-}
-
-async function addPlayer(nameOverride=null){
-  const r = await api("/add_player", { id: tournamentId(), categoryId: $("playerCategory").value, name: (nameOverride || $("playerName").value).trim() });
-  if(!r.success) return setStatus(r.error || "No se pudo añadir jugador", false);
-  $("playerName").value = "";
-  await loadTournament();
-}
-async function bulkPlayers(){
-  const lines = $("bulkPlayers").value.split("\n").map(x=>x.trim()).filter(Boolean);
-  for(const name of lines){ await addPlayer(name); }
-  $("bulkPlayers").value = "";
-  setStatus("✅ Jugadores cargados");
-}
-async function updatePlayer(){
-  if(!state.selectedPlayerId) return setStatus("Selecciona un jugador de la lista", false);
-  const r = await api("/update_player", { adminKey: adminKey(), id: tournamentId(), categoryId: $("playerCategory").value, playerId: state.selectedPlayerId, name: $("playerName").value.trim() });
-  if(!r.success) return setStatus(r.error || "No se pudo editar el jugador", false);
-  await loadTournament();
-}
-async function deletePlayer(categoryId, playerId){
-  if(!confirm("¿Eliminar este jugador?")) return;
-  const r = await api("/delete_player", { adminKey: adminKey(), id: tournamentId(), categoryId, playerId });
-  if(!r.success) return setStatus(r.error || "No se pudo borrar el jugador", false);
-  await loadTournament();
-}
-
-async function addRound(){
-  const r = await api("/add_round", { adminKey: adminKey(), id: tournamentId(), categoryId: $("roundCategory").value, name: $("roundName").value.trim() });
-  if(!r.success) return setStatus(r.error || "No se pudo crear la jornada", false);
-  $("roundName").value = "";
-  await loadTournament();
-}
-async function updateRound(){
-  if(!state.selectedRoundId) return setStatus("Selecciona una jornada de la lista", false);
-  const r = await api("/update_round", { adminKey: adminKey(), id: tournamentId(), categoryId: $("roundCategory").value, roundId: state.selectedRoundId, name: $("roundName").value.trim() });
-  if(!r.success) return setStatus(r.error || "No se pudo editar la jornada", false);
-  await loadTournament();
-}
-async function deleteRound(categoryId, roundId){
-  if(!confirm("¿Eliminar esta jornada?")) return;
-  const r = await api("/delete_round", { adminKey: adminKey(), id: tournamentId(), categoryId, roundId });
-  if(!r.success) return setStatus(r.error || "No se pudo borrar la jornada", false);
-  await loadTournament();
-}
-
-async function addMatch(){
-  const a = $("playerA").value, b = $("playerB").value;
-  if(!a || !b || a === b) return setStatus("Revisa Jugador A y B", false);
-  const r = await api("/add_match", { adminKey: adminKey(), id: tournamentId(), categoryId: $("matchCategory").value, roundId: $("matchRound").value, playerAId: a, playerBId: b });
-  if(!r.success) return setStatus(r.error || "No se pudo crear el partido", false);
-  await loadTournament();
-}
-async function updateMatch(){
-  if(!state.selectedMatchId) return setStatus("Selecciona un partido de la lista", false);
-  const a = $("playerA").value, b = $("playerB").value;
-  if(!a || !b || a === b) return setStatus("Revisa Jugador A y B", false);
-  const r = await api("/update_match", { adminKey: adminKey(), id: tournamentId(), categoryId: $("matchCategory").value, matchId: state.selectedMatchId, roundId: $("matchRound").value, playerAId: a, playerBId: b });
-  if(!r.success) return setStatus(r.error || "No se pudo editar el partido", false);
-  await loadTournament();
-}
-async function deleteSelectedMatch(){
-  const categoryId = $("manageCategory").value;
-  const matchId = $("manageMatch").value;
-  if(!categoryId || !matchId) return setStatus("Selecciona un partido", false);
-  if(!confirm("¿Eliminar este partido?")) return;
-  const r = await api("/delete_match", { adminKey: adminKey(), id: tournamentId(), categoryId, matchId });
-  if(!r.success) return setStatus(r.error || "No se pudo borrar el partido", false);
-  await loadTournament();
-}
-function quickDeleteMatch(categoryId, matchId){
-  $("manageCategory").value = categoryId;
-  fillManageMatches();
-  $("manageMatch").value = matchId;
-  deleteSelectedMatch();
-}
-
-async function saveSchedule(){
-  const r = await api("/save_schedule", {
-    id: tournamentId(),
-    categoryId: $("manageCategory").value,
-    matchId: $("manageMatch").value,
-    schedule: {
-      date: $("schedDate").value,
-      time: $("schedTime").value,
-      venue: $("schedVenue").value.trim(),
-      court: $("schedCourt").value.trim(),
-      notes: $("schedNotes").value.trim()
-    },
-    by: $("schedBy").value.trim() || "admin"
-  });
-  if(!r.success) return setStatus(r.error || "No se pudo guardar la programación", false);
-  setStatus("✅ Programación guardada");
-  await loadTournament();
-}
-async function clearSchedule(){
-  const r = await api("/clear_schedule", { adminKey: adminKey(), id: tournamentId(), categoryId: $("manageCategory").value, matchId: $("manageMatch").value });
-  if(!r.success) return setStatus(r.error || "No se pudo borrar la programación", false);
-  await loadTournament();
-}
-async function saveResult(){
-  const r = await api("/save_result", {
-    id: tournamentId(),
-    categoryId: $("manageCategory").value,
-    matchId: $("manageMatch").value,
-    result: {
-      s1a: Number($("s1a").value), s1b: Number($("s1b").value),
-      s2a: Number($("s2a").value), s2b: Number($("s2b").value),
-      tbA: $("tbA").value === "" ? null : Number($("tbA").value),
-      tbB: $("tbB").value === "" ? null : Number($("tbB").value)
-    },
-    by: $("resultBy").value.trim() || "admin"
-  });
-  if(!r.success) return setStatus(r.error || "No se pudo guardar el resultado", false);
-  setStatus("✅ Resultado guardado");
-  await loadTournament();
-}
-async function clearResult(){
-  const r = await api("/clear_result", { adminKey: adminKey(), id: tournamentId(), categoryId: $("manageCategory").value, matchId: $("manageMatch").value });
-  if(!r.success) return setStatus(r.error || "No se pudo borrar el resultado", false);
-  await loadTournament();
-}
-async function setFlags(postponed, noPlayed){
-  const r = await api("/set_match_flags", { adminKey: adminKey(), id: tournamentId(), categoryId: $("manageCategory").value, matchId: $("manageMatch").value, postponed, noPlayed });
-  if(!r.success) return setStatus(r.error || "No se pudo actualizar el estado", false);
-  await loadTournament();
-}
-
-function fillCategorySelects(){
-  const ids = Object.keys(state.tournament?.categories || {});
-  ["playerCategory","roundCategory","matchCategory","manageCategory","tableCategory","calendarCategory"].forEach(id => {
-    const sel = $(id), current = sel.value;
-    sel.innerHTML = ids.length ? ids.map(cid => '<option value="'+cid+'">'+state.tournament.categories[cid].name+'</option>').join("") : '<option value="">Sin categorías</option>';
-    if(ids.includes(current)) sel.value = current;
-  });
-  if(!state.tableCategoryId && ids.length) state.tableCategoryId = ids[0];
-  if(!state.calendarCategoryId && ids.length) state.calendarCategoryId = ids[0];
-  if(ids.length){
-    $("tableCategory").value = state.tableCategoryId;
-    $("calendarCategory").value = state.calendarCategoryId;
-  }
-}
-
-function renderCategories(){
-  const cats = Object.values(state.tournament?.categories || {});
-  $("categoryList").innerHTML = cats.length ? cats.map(c => `
-    <div class="item">
-      <b>${c.name}</b><br>
-      <span class="muted">${c.id}</span><br>
-      <span class="muted">${Object.keys(c.players||{}).length} jugadores · ${Object.keys(c.rounds||{}).length} jornadas · ${Object.keys(c.matches||{}).length} partidos</span>
-      <div class="inlineActions">
-        <button class="secondary" onclick="selectCategory('${c.id}','${c.name.replace(/'/g,"\\'")}')">Editar</button>
-        <button class="danger" onclick="deleteCategory('${c.id}')">Eliminar</button>
-      </div>
-    </div>
-  `).join("") : '<div class="muted">No hay categorías todavía.</div>';
-}
-function selectCategory(categoryId, name){
-  state.selectedCategoryId = categoryId;
-  $("categoryId").value = categoryId;
-  $("categoryName").value = name;
-  setStatus("Categoría cargada para editar");
-}
-
-function renderPlayers(){
-  const categoryId = $("playerCategory").value;
-  const cat = currentCategoryObj("playerCategory");
-  $("playerList").innerHTML = cat ? (Object.values(cat.players || {}).length ? Object.values(cat.players || {}).map(p => `
-    <div class="item">
-      <b>${p.name}</b><br><span class="muted">${p.id}</span>
-      <div class="inlineActions">
-        <button class="secondary" onclick="selectPlayer('${p.id}','${p.name.replace(/'/g,"\\'")}')">Editar</button>
-        <button class="danger" onclick="deletePlayer('${categoryId}','${p.id}')">Eliminar</button>
-      </div>
-    </div>
-  `).join("") : '<div class="muted">No hay jugadores.</div>') : '<div class="muted">Selecciona una categoría.</div>';
-}
-function selectPlayer(playerId, name){
-  state.selectedPlayerId = playerId;
-  $("playerName").value = name;
-  setStatus("Jugador cargado para editar");
-}
-
-function renderRounds(){
-  const categoryId = $("roundCategory").value;
-  const cat = currentCategoryObj("roundCategory");
-  $("roundList").innerHTML = cat ? (Object.values(cat.rounds || {}).length ? Object.values(cat.rounds || {}).map(r => `
-    <div class="item">
-      <b>${r.name}</b><br><span class="muted">${r.id}</span>
-      <div class="inlineActions">
-        <button class="secondary" onclick="selectRound('${r.id}','${r.name.replace(/'/g,"\\'")}')">Editar</button>
-        <button class="danger" onclick="deleteRound('${categoryId}','${r.id}')">Eliminar</button>
-      </div>
-    </div>
-  `).join("") : '<div class="muted">No hay jornadas.</div>') : '<div class="muted">Selecciona una categoría.</div>';
-}
-function selectRound(roundId, name){
-  state.selectedRoundId = roundId;
-  $("roundName").value = name;
-  setStatus("Jornada cargada para editar");
-}
-
-function fillMatchFormOptions(){
-  const cat = currentCategoryObj("matchCategory");
-  if(!cat){
-    $("matchRound").innerHTML = '<option value="">Sin jornadas</option>';
-    $("playerA").innerHTML = '<option value="">Sin jugadores</option>';
-    $("playerB").innerHTML = '<option value="">Sin jugadores</option>';
-    return;
-  }
-  $("matchRound").innerHTML = Object.values(cat.rounds || {}).length ? Object.values(cat.rounds || {}).map(r => '<option value="'+r.id+'">'+r.name+'</option>').join("") : '<option value="">Sin jornadas</option>';
-  const opts = Object.values(cat.players || {}).length ? Object.values(cat.players || {}).map(p => '<option value="'+p.id+'">'+p.name+'</option>').join("") : '<option value="">Sin jugadores</option>';
-  $("playerA").innerHTML = opts;
-  $("playerB").innerHTML = opts;
-}
-function renderMatches(){
-  const categoryId = $("matchCategory").value;
-  const cat = currentCategoryObj("matchCategory");
-  $("matchList").innerHTML = cat ? (Object.values(cat.matches || {}).length ? Object.values(cat.matches || {}).map(m => `
-    <div class="item">
-      <b>${playerName(cat,m.playerAId)} vs ${playerName(cat,m.playerBId)}</b><br>
-      <span class="muted">Jornada: ${cat.rounds?.[m.roundId]?.name || m.roundId}</span><br>
-      <span class="muted">Estado: ${getMatchStatus(m)}</span>
-      <div class="inlineActions">
-        <button class="secondary" onclick="selectMatch('${m.id}','${m.roundId}','${m.playerAId}','${m.playerBId}')">Editar</button>
-        <button class="danger" onclick="quickDeleteMatch('${categoryId}','${m.id}')">Eliminar</button>
-      </div>
-    </div>
-  `).join("") : '<div class="muted">No hay partidos.</div>') : '<div class="muted">Selecciona una categoría.</div>';
-}
-function selectMatch(matchId, roundId, playerAId, playerBId){
-  state.selectedMatchId = matchId;
-  $("matchRound").value = roundId;
-  $("playerA").value = playerAId;
-  $("playerB").value = playerBId;
-  setStatus("Partido cargado para editar");
-}
-
-function fillManageMatches(){
-  const cat = currentCategoryObj("manageCategory");
-  if(!cat){
-    $("manageMatch").innerHTML = '<option value="">Sin partidos</option>';
-    $("manageInfo").innerHTML = '<span class="muted">Selecciona un partido.</span>';
-    return;
-  }
-  const matches = Object.values(cat.matches || {});
-  $("manageMatch").innerHTML = matches.length ? matches.map(m => '<option value="'+m.id+'">'+playerName(cat,m.playerAId)+' vs '+playerName(cat,m.playerBId)+' · '+getMatchStatus(m)+'</option>').join("") : '<option value="">Sin partidos</option>';
-  loadSelectedMatchData();
-}
-function loadSelectedMatchData(){
-  const cat = currentCategoryObj("manageCategory");
-  const matchId = $("manageMatch").value;
-  if(!cat || !matchId || !cat.matches[matchId]){
-    $("manageInfo").innerHTML = '<span class="muted">Selecciona un partido.</span>';
-    return;
-  }
-  const m = cat.matches[matchId], s = m.schedule || {}, r = m.result || {};
-  $("schedDate").value = s.date || ""; $("schedTime").value = s.time || ""; $("schedVenue").value = s.venue || ""; $("schedCourt").value = s.court || ""; $("schedNotes").value = s.notes || "";
-  $("s1a").value = r.s1a ?? ""; $("s1b").value = r.s1b ?? ""; $("s2a").value = r.s2a ?? ""; $("s2b").value = r.s2b ?? ""; $("tbA").value = r.tbA ?? ""; $("tbB").value = r.tbB ?? "";
-  $("manageInfo").innerHTML = '<b>'+playerName(cat,m.playerAId)+' vs '+playerName(cat,m.playerBId)+'</b><br><span class="muted">Estado actual:</span> '+getMatchStatus(m);
-}
-
-function getTableFilteredMatches(){
-  const cat = categoryById(state.tableCategoryId);
-  if(!cat) return [];
-  let matches = Object.values(cat.matches || {});
-  if(state.tableRoundId !== "__ALL__") matches = matches.filter(m => m.roundId === state.tableRoundId);
-  if(state.tableStatus !== "__ALL__") matches = matches.filter(m => getMatchStatus(m) === state.tableStatus);
-  return matches.sort((a,b) => {
-    const ad = (a.schedule?.date || "9999-12-31") + " " + (a.schedule?.time || "23:59");
-    const bd = (b.schedule?.date || "9999-12-31") + " " + (b.schedule?.time || "23:59");
-    return ad.localeCompare(bd);
-  });
-}
-function fillTableRoundSelect(){
-  const cat = categoryById(state.tableCategoryId);
-  const rounds = Object.values(cat?.rounds || {});
-  let html = '<option value="__ALL__">Todas</option>';
-  html += rounds.map(r => '<option value="'+r.id+'">'+r.name+'</option>').join("");
-  $("tableRound").innerHTML = html;
-  if(!rounds.some(r => r.id === state.tableRoundId)) state.tableRoundId = "__ALL__";
-  $("tableRound").value = state.tableRoundId;
-}
-function renderMatchesTable(){
-  fillTableRoundSelect();
-  const cat = categoryById(state.tableCategoryId);
-  const rows = getTableFilteredMatches();
-  $("tableMeta").textContent = rows.length + " partidos";
-  if(!cat || !rows.length){
-    $("matchesTableBody").innerHTML = '<tr><td colspan="9" class="muted">No hay partidos para ese filtro.</td></tr>';
-    return;
-  }
-  $("matchesTableBody").innerHTML = rows.map(m => {
-    const st = getMatchStatus(m), s = m.schedule || {};
-    return `
-      <tr>
-        <td>${cat.rounds?.[m.roundId]?.name || m.roundId}</td>
-        <td><b>${playerName(cat,m.playerAId)}</b><br><span class="muted">vs ${playerName(cat,m.playerBId)}</span></td>
-        <td>${s.date || "—"}</td>
-        <td>${s.time || "—"}</td>
-        <td>${s.venue || "—"}</td>
-        <td>${s.court || "—"}</td>
-        <td><span class="tag ${st}">${st.replace("_"," ")}</span></td>
-        <td>${formatResult(m.result)}</td>
-        <td><button class="secondary" onclick="openMatchFromTable('${state.tableCategoryId}','${m.id}')">Editar</button></td>
-      </tr>
-    `;
-  }).join("");
-}
-function openMatchFromTable(categoryId, matchId){
-  $("manageCategory").value = categoryId;
-  fillManageMatches();
-  $("manageMatch").value = matchId;
-  loadSelectedMatchData();
-  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-}
-
-function monthName(date){
-  return date.toLocaleDateString("es-ES", { month:"long", year:"numeric" }).replace(/^./, c => c.toUpperCase());
-}
-function renderCalendar(){
-  const cat = categoryById(state.calendarCategoryId);
-  const wrap = $("calendarWrap");
-  wrap.innerHTML = "";
-  if(!cat){
-    wrap.innerHTML = '<div class="muted">Sin categoría.</div>';
-    return;
-  }
-  const [year, month] = state.calendarMonth.split("-").map(Number);
-  const first = new Date(year, month-1, 1);
-  const last = new Date(year, month, 0);
-
-  const gridStart = new Date(first);
-  const firstDow = (first.getDay() + 6) % 7;
-  gridStart.setDate(first.getDate() - firstDow);
-
-  const gridEnd = new Date(last);
-  const lastDow = (last.getDay() + 6) % 7;
-  const addToSunday = (6 - lastDow + 7) % 7;
-  gridEnd.setDate(last.getDate() + addToSunday);
-
-  const byDate = {};
-  Object.values(cat.matches || {}).forEach(m => {
-    const d = m.schedule?.date;
-    if(!d) return;
-    if(!byDate[d]) byDate[d] = [];
-    byDate[d].push(m);
-  });
-
-  $("calendarMeta").textContent = monthName(first);
-
-  const table = document.createElement("table");
-  table.className = "calTable";
-  const thead = document.createElement("thead");
-  const trh = document.createElement("tr");
-  ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].forEach(x => {
-    const th = document.createElement("th");
-    th.textContent = x;
-    trh.appendChild(th);
-  });
-  thead.appendChild(trh);
-  table.appendChild(thead);
-  const tbody = document.createElement("tbody");
-
-  let d = new Date(gridStart);
-  while(d <= gridEnd){
-    const tr = document.createElement("tr");
-    for(let i=0; i<7; i++){
-      const td = document.createElement("td");
-      const cell = document.createElement("div");
-      cell.className = "dayCell";
-      const inMonth = d.getMonth() === first.getMonth();
-      cell.style.opacity = inMonth ? "1" : ".35";
-
-      const n = document.createElement("div");
-      n.className = "n";
-      n.textContent = d.getDate();
-      cell.appendChild(n);
-
-      const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-      const events = document.createElement("div");
-      events.className = "events";
-      (byDate[key] || []).forEach(m => {
-        const st = getMatchStatus(m);
-        const e = document.createElement("div");
-        e.className = "evt " + st;
-        e.innerHTML = '<div class="t">' + (m.schedule?.time || "—") + '</div><div><b>' + playerName(cat,m.playerAId) + '</b> vs <b>' + playerName(cat,m.playerBId) + '</b></div>';
-        e.onclick = () => openMatchFromTable(state.calendarCategoryId, m.id);
-        events.appendChild(e);
-      });
-      cell.appendChild(events);
-      td.appendChild(cell);
-      tr.appendChild(td);
-      d.setDate(d.getDate()+1);
-    }
-    tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-  wrap.appendChild(table);
-}
-
-function renderAll(){
-  fillCategorySelects();
-  renderCategories();
-  renderPlayers();
-  renderRounds();
-  fillMatchFormOptions();
-  renderMatches();
-  fillManageMatches();
-  renderMatchesTable();
-  renderCalendar();
-}
-
-function wire(){
-  $("createTournamentBtn").onclick = createTournament;
-  $("loadTournamentBtn").onclick = loadTournament;
-  $("addCategoryBtn").onclick = addCategory;
-  $("updateCategoryBtn").onclick = updateCategory;
-  $("addPlayerBtn").onclick = () => addPlayer();
-  $("bulkPlayersBtn").onclick = bulkPlayers;
-  $("updatePlayerBtn").onclick = updatePlayer;
-  $("addRoundBtn").onclick = addRound;
-  $("updateRoundBtn").onclick = updateRound;
-  $("addMatchBtn").onclick = addMatch;
-  $("updateMatchBtn").onclick = updateMatch;
-  $("saveScheduleBtn").onclick = saveSchedule;
-  $("clearScheduleBtn").onclick = clearSchedule;
-  $("saveResultBtn").onclick = saveResult;
-  $("clearResultBtn").onclick = clearResult;
-  $("markPostponedBtn").onclick = () => setFlags(true, false);
-  $("unmarkPostponedBtn").onclick = () => setFlags(false, false);
-  $("markNoPlayedBtn").onclick = () => setFlags(false, true);
-  $("unmarkNoPlayedBtn").onclick = () => setFlags(false, false);
-  $("deleteMatchBtn").onclick = deleteSelectedMatch;
-
-  $("playerCategory").onchange = renderPlayers;
-  $("roundCategory").onchange = renderRounds;
-  $("matchCategory").onchange = () => { fillMatchFormOptions(); renderMatches(); };
-  $("manageCategory").onchange = fillManageMatches;
-  $("manageMatch").onchange = loadSelectedMatchData;
-
-  $("tableCategory").onchange = () => {
-    state.tableCategoryId = $("tableCategory").value;
-    renderMatchesTable();
-  };
-  $("tableStatus").onchange = () => {
-    state.tableStatus = $("tableStatus").value;
-    renderMatchesTable();
-  };
-  $("tableRound").onchange = () => {
-    state.tableRoundId = $("tableRound").value;
-    renderMatchesTable();
-  };
-  $("calendarCategory").onchange = () => {
-    state.calendarCategoryId = $("calendarCategory").value;
-    renderCalendar();
-  };
-  $("calendarMonth").onchange = () => {
-    state.calendarMonth = $("calendarMonth").value;
-    renderCalendar();
-  };
-}
-
-wire();
-</script>
-</body>
-</html>
